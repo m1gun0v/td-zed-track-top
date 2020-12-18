@@ -1,0 +1,8 @@
+.vs
+.vscode
+out
+CMakeSettings.json
+build
+
+libs
+src/aruco
