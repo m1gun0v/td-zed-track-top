@@ -12,7 +12,12 @@ class CustomTOP : public TOP_CPlusPlusBase
 public:
 
 	CustomTOP(const OP_NodeInfo* info, TOP_Context *context)
-	{}
+	{
+		zedAvailable = initZed();
+		if (zedAvailable) {
+			auto camera_info = zed.getCameraInformation().camera_configuration;
+		}
+	}
 
 	virtual ~CustomTOP()
 	{}
@@ -65,7 +70,7 @@ private:
 
 	bool zedAvailable = false;
 	// adding the following line brakes the TOP in touch designer.
-	ObjectDetectionParameters obj_det_params;
+	//ObjectDetectionParameters obj_det_params;
 
 	bool initZed()
 	{
@@ -96,7 +101,7 @@ private:
 			return false;
 		}
 
-		cout << returned_state;
+		cout << returned_state; // this works
 
 		return true;
 	}
