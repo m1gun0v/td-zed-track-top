@@ -11,10 +11,10 @@
 * to endorse or promote products derived from this file without specific
 * prior written permission from Derivative.
 */
+#ifndef Program_h
+#define Program_h
 
-#pragma once
-
-#include "TOP_CPlusPlusBase.h"
+#include "glew.h"
 
 class Program
 {
@@ -29,3 +29,4 @@ private:
     static GLuint compileShader(const char *source, GLenum type, const char **error);
     GLuint myProgram;
 };
+#endif /* Program_h */

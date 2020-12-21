@@ -1,8 +1,33 @@
+
 #include "glew.h"
-//#include "Program.h"
-#include "CPlusPlus_Common.h"
 #include "TOP_CPlusPlusBase.h"
+#include "CPlusPlus_Common.h"
+#include "Program.h"
 #include "sl/Camera.hpp"
+
+
+#include <assert.h>
+#ifdef __APPLE__
+#include <OpenGL/gl3.h>
+#include <string.h>
+#endif
+#include <cstdio>
+
+static const char *vertexShader = "#version 330\n\
+uniform mat4 uModelView; \
+in vec3 P; \
+void main() { \
+    gl_Position = vec4(P, 1) * uModelView; \
+}";
+
+static const char *fragmentShader = "#version 330\n\
+uniform vec4 uColor; \
+out vec4 finalColor; \
+void main() { \
+    finalColor = uColor; \
+}";
+
+static const char *uniformError = "A uniform location could not be found.";
 
 using namespace sl;
 using namespace std;
@@ -13,7 +38,7 @@ class CustomTOP : public TOP_CPlusPlusBase
 {
 public:
 
-	CustomTOP(const OP_NodeInfo* info, TOP_Context *context)
+	CustomTOP(const OP_NodeInfo* info, TOP_Context *context): myExecuteCount(0), myError(nullptr), myProgram(), myDidSetup(false), myModelViewUniform(-1), myColorUniform(-1)
 	{
 #ifdef _WIN32
 		// GLEW is global static function pointers, only needs to be inited once,
@@ -54,29 +79,46 @@ public:
 
 	void execute(TOP_OutputFormatSpecs* outputFormat, const OP_Inputs* inputs, TOP_Context *context, void* reserved1) override
 	{
-		int textureMemoryLocation = 0;
+		myError = nullptr;
+		myExecuteCount++;
 
-		uint8_t* mem = (uint8_t*)outputFormat->cpuPixelData[textureMemoryLocation];
+		// These functions must be called before
+		// beginGLCommands()/endGLCommands() block
+		//double speed = inputs->getParDouble("Speed");
+		double speed = 1.00;
 
-		for (int y = 0; y < outputFormat->height; y++)
+		setupGL();
+
+		if (!myError)
 		{
-			uint8_t* pixel = mem + outputFormat->width * y * 4;
-			float v = (float)y / (outputFormat->height - 1);
+			glViewport(0, 0, 100, 200);
+			glClearColor(0.0, 0.0, 0.0, 0.0);
+			glClear(GL_COLOR_BUFFER_BIT);
 
-			for (int x = 0; x < outputFormat->width; x++)
-			{
-				float u = (float)x / (outputFormat->width - 1);
+			//glUseProgram(myProgram.getName());
 
-				pixel[0] = u * 255;
-				pixel[1] = v * 255;
-				pixel[2] = 0;
-				pixel[3] = 255;
+			//// Draw the square
 
-				pixel += 4;
-			}
+			//glUniform4f(myColorUniform, static_cast<GLfloat>(color1[0]), static_cast<GLfloat>(color1[1]), static_cast<GLfloat>(color1[2]), 1.0f);
+
+			//mySquare.setTranslate(0.5f, 0.5f);
+			//mySquare.setRotation(static_cast<GLfloat>(myRotation));
+
+			//Matrix model = mySquare.getMatrix();
+			//glUniformMatrix4fv(myModelViewUniform, 1, GL_FALSE, (model * view).matrix);
+
+			//mySquare.bindVAO();
+
+			//glDrawArrays(GL_TRIANGLES, 0, mySquare.getElementCount() / 3);
+
+
+			// Tidy up
+
+			glBindVertexArray(0);
+			glUseProgram(0);
 		}
 
-		outputFormat->newCPUPixelDataLocation = textureMemoryLocation;
+		context->endGLCommands();
 	}
 
 private:
@@ -93,7 +135,7 @@ private:
 	int32_t				myExecuteCount;
 	const char*			myError;
 
-	//Program				myProgram;
+	Program				myProgram;
 	bool				myDidSetup;
 	GLint				myModelViewUniform;
 	GLint				myColorUniform;
@@ -103,6 +145,19 @@ private:
 		zed.disableObjectDetection();
 		zed.disablePositionalTracking();
 		zed.close();
+	}
+	void print(string msg_prefix, ERROR_CODE err_code, string msg_suffix) {
+		cout << "[Sample]";
+		if (err_code != ERROR_CODE::SUCCESS)
+			cout << "[Error]";
+		cout << " " << msg_prefix << " ";
+		if (err_code != ERROR_CODE::SUCCESS) {
+			cout << " | " << toString(err_code) << " : ";
+			cout << toVerbose(err_code);
+		}
+		if (!msg_suffix.empty())
+			cout << " " << msg_suffix;
+		cout << endl;
 	}
 
 	bool initZed()
@@ -155,18 +210,41 @@ private:
 		return true;
 	}
 
-	void print(string msg_prefix, ERROR_CODE err_code, string msg_suffix) {
-		cout << "[Sample]";
-		if (err_code != ERROR_CODE::SUCCESS)
-			cout << "[Error]";
-		cout << " " << msg_prefix << " ";
-		if (err_code != ERROR_CODE::SUCCESS) {
-			cout << " | " << toString(err_code) << " : ";
-			cout << toVerbose(err_code);
+	void setupGL()
+	{
+		if (myDidSetup == false)
+		{
+			myError = myProgram.build(vertexShader, fragmentShader);
+
+			// If an error occurred creating myProgram, we can't proceed
+			if (myError == nullptr)
+			{
+				GLint vertAttribLocation = glGetAttribLocation(myProgram.getName(), "P");
+				myModelViewUniform = glGetUniformLocation(myProgram.getName(), "uModelView");
+				myColorUniform = glGetUniformLocation(myProgram.getName(), "uColor");
+
+				if (vertAttribLocation == -1 || myModelViewUniform == -1 || myColorUniform == -1)
+				{
+					myError = uniformError;
+				}
+
+				//// Set up our two shapes
+				//GLfloat square[] = {
+				//	-0.5, -0.5, 1.0,
+				//	0.5, -0.5, 1.0,
+				//	-0.5,  0.5, 1.0,
+
+				//	0.5, -0.5, 1.0,
+				//	0.5,  0.5, 1.0,
+				//	-0.5,  0.5, 1.0
+				//};
+
+				//mySquare.setVertices(square, 2 * 9);
+				//mySquare.setup(vertAttribLocation);
+			}
+
+			myDidSetup = true;
 		}
-		if (!msg_suffix.empty())
-			cout << " " << msg_suffix;
-		cout << endl;
 	}
 
 };
@@ -181,21 +259,21 @@ extern "C"
 		info->apiVersion = TOPCPlusPlusAPIVersion;
 
 		// Change this to change the executeMode behavior of this plugin.
-		info->executeMode = TOP_ExecuteMode::CPUMemWriteOnly;
+		info->executeMode = TOP_ExecuteMode::OpenGL_FBO;
 
 		// The opType is the unique name for this TOP. It must start with a
 		// capital A-Z character, and all the following characters must lower case
 		// or numbers (a-z, 0-9)
-		info->customOPInfo.opType->setString("Testop");
+		info->customOPInfo.opType->setString("ZedTopSkeleton");
 
 		// The opLabel is the text that will show up in the OP Create Dialog
-		info->customOPInfo.opLabel->setString("Test OP");
+		info->customOPInfo.opLabel->setString("Zed TOP Skeleton");
 
 		// Will be turned into a 3 letter icon on the nodes
-		info->customOPInfo.opIcon->setString("TST");
+		info->customOPInfo.opIcon->setString("SKL");
 
 		// Information about the author of this OP
-		info->customOPInfo.authorName->setString("Author Name");
+		info->customOPInfo.authorName->setString("Davide Prati");
 		info->customOPInfo.authorEmail->setString("email@email.com");
 
 		// This TOP works with 0 or 1 inputs connected
@@ -216,3 +294,5 @@ extern "C"
 		context->endGLCommands();
 	}
 };
+
+
