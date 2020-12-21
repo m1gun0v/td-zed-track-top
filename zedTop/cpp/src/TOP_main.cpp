@@ -86,7 +86,7 @@ public:
 		// beginGLCommands()/endGLCommands() block
 		//double speed = inputs->getParDouble("Speed");
 		double speed = 1.00;
-
+		context->beginGLCommands();
 		setupGL();
 
 		if (!myError)
