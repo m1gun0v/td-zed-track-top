@@ -1,4 +1,5 @@
 #include "glew.h"
+//#include "Program.h"
 #include "CPlusPlus_Common.h"
 #include "TOP_CPlusPlusBase.h"
 #include "sl/Camera.hpp"
@@ -85,8 +86,17 @@ private:
 	PositionalTrackingParameters positional_tracking_parameters;
 
 	bool zedAvailable = false;
-	// adding the following line brakes the TOP in touch designer.
-	//ObjectDetectionParameters obj_det_params;
+
+
+	// In this example this value will be incremented each time the execute()
+	// function is called, then passes back to the TOP
+	int32_t				myExecuteCount;
+	const char*			myError;
+
+	//Program				myProgram;
+	bool				myDidSetup;
+	GLint				myModelViewUniform;
+	GLint				myColorUniform;
 
 	void unloadZed() {
 		// Disable modules
@@ -201,8 +211,8 @@ extern "C"
 	DLLEXPORT void DestroyTOPInstance(TOP_CPlusPlusBase* instance, TOP_Context *context)
 	{
 		//unloadZed();
-		//context->beginGLCommands();
+		context->beginGLCommands();
 		delete (CustomTOP*)instance;
-		//context->endGLCommands();
+		context->endGLCommands();
 	}
 };
