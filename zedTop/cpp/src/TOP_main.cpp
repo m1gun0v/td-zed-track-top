@@ -20,7 +20,9 @@ public:
 	}
 
 	virtual ~CustomTOP()
-	{}
+	{
+		unloadZed();
+	}
 
 	void setupParameters(OP_ParameterManager* manager, void* reserved1) override
 	{}
@@ -72,6 +74,13 @@ private:
 	// adding the following line brakes the TOP in touch designer.
 	//ObjectDetectionParameters obj_det_params;
 
+	void unloadZed() {
+		// Disable modules
+		zed.disableObjectDetection();
+		zed.disablePositionalTracking();
+		zed.close();
+	}
+
 	bool initZed()
 	{
 		init_parameters.camera_resolution = RESOLUTION::HD2K;
@@ -102,6 +111,22 @@ private:
 		}
 
 		cout << returned_state; // this works
+
+		// Enable the Objects detection module
+		ObjectDetectionParameters obj_det_params;
+		obj_det_params.enable_tracking = true; // track people across images flow
+		obj_det_params.enable_body_fitting = true; // smooth skeletons moves
+		obj_det_params.detection_model = DETECTION_MODEL::HUMAN_BODY_ACCURATE;
+
+		returned_state = zed.enableObjectDetection(obj_det_params);
+		if (returned_state != ERROR_CODE::SUCCESS) {
+			print("enable Object Detection", returned_state, "\nExit program.");
+			zed.close();
+			return EXIT_FAILURE;
+		}
+		cout << returned_state; // this works too
+		auto camera_info = zed.getCameraInformation().camera_configuration;
+
 
 		return true;
 	}
@@ -161,6 +186,7 @@ extern "C"
 
 	DLLEXPORT void DestroyTOPInstance(TOP_CPlusPlusBase* instance, TOP_Context *context)
 	{
+		//unloadZed();
 		//context->beginGLCommands();
 		delete (CustomTOP*)instance;
 		//context->endGLCommands();
