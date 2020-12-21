@@ -1,3 +1,4 @@
+#include "glew.h"
 #include "CPlusPlus_Common.h"
 #include "TOP_CPlusPlusBase.h"
 #include "sl/Camera.hpp"
@@ -13,6 +14,19 @@ public:
 
 	CustomTOP(const OP_NodeInfo* info, TOP_Context *context)
 	{
+#ifdef _WIN32
+		// GLEW is global static function pointers, only needs to be inited once,
+		// and only on Windows.
+		static bool needGLEWInit = true;
+		if (needGLEWInit)
+		{
+			needGLEWInit = false;
+			context->beginGLCommands();
+			// Setup all our GL extensions using GLEW
+			glewInit();
+			context->endGLCommands();
+		}
+#endif
 		zedAvailable = initZed();
 		if (zedAvailable) {
 			auto camera_info = zed.getCameraInformation().camera_configuration;
