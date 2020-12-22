@@ -2,7 +2,7 @@
 #include "glew.h"
 #include "TOP_CPlusPlusBase.h"
 #include "CPlusPlus_Common.h"
-#include "Shader.h"
+#include "GLViewer.hpp"
 #include "sl/Camera.hpp"
 
 
@@ -38,7 +38,7 @@ class CustomTOP : public TOP_CPlusPlusBase
 {
 public:
 
-	CustomTOP(const OP_NodeInfo* info, TOP_Context *context): myExecuteCount(0), myError(nullptr), myProgram(), myDidSetup(false), myModelViewUniform(-1), myColorUniform(-1)
+	CustomTOP(const OP_NodeInfo* info, TOP_Context *context): myExecuteCount(0), myError(nullptr), myDidSetup(false), myModelViewUniform(-1), myColorUniform(-1)
 	{
 #ifdef _WIN32
 		// GLEW is global static function pointers, only needs to be inited once,
@@ -135,7 +135,7 @@ private:
 	int32_t				myExecuteCount;
 	const char*			myError;
 
-	Shader				myProgram;
+	GLViewer			viewer;
 	bool				myDidSetup;
 	GLint				myModelViewUniform;
 	GLint				myColorUniform;
@@ -214,19 +214,19 @@ private:
 	{
 		if (myDidSetup == false)
 		{
-			myError = myProgram.build(vertexShader, fragmentShader);
+			//myError = myProgram.build(vertexShader, fragmentShader);
 
-			// If an error occurred creating myProgram, we can't proceed
-			if (myError == nullptr)
-			{
-				GLint vertAttribLocation = glGetAttribLocation(myProgram.getName(), "P");
-				myModelViewUniform = glGetUniformLocation(myProgram.getName(), "uModelView");
-				myColorUniform = glGetUniformLocation(myProgram.getName(), "uColor");
+			//// If an error occurred creating myProgram, we can't proceed
+			//if (myError == nullptr)
+			//{
+			//	GLint vertAttribLocation = glGetAttribLocation(myProgram.getName(), "P");
+			//	myModelViewUniform = glGetUniformLocation(myProgram.getName(), "uModelView");
+			//	myColorUniform = glGetUniformLocation(myProgram.getName(), "uColor");
 
-				if (vertAttribLocation == -1 || myModelViewUniform == -1 || myColorUniform == -1)
-				{
-					myError = uniformError;
-				}
+			//	if (vertAttribLocation == -1 || myModelViewUniform == -1 || myColorUniform == -1)
+			//	{
+			//		myError = uniformError;
+			//	}
 
 				//// Set up our two shapes
 				//GLfloat square[] = {
@@ -241,9 +241,9 @@ private:
 
 				//mySquare.setVertices(square, 2 * 9);
 				//mySquare.setup(vertAttribLocation);
-			}
+			//}
 
-			myDidSetup = true;
+			//myDidSetup = true;
 		}
 	}
 
