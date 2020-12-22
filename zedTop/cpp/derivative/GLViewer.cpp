@@ -24,7 +24,7 @@ bool GLViewer::isAvailable() {
 
 //void CloseFunc(void) { if (currentInstance_) currentInstance_->exit(); }
 
-void GLViewer::init(int argc, char **argv, sl::CameraParameters param) {
+void GLViewer::init(sl::CameraParameters param) {
 }
 
 void GLViewer::setFloorPlaneEquation(sl::float4 eq) {

@@ -47,7 +47,7 @@ public:
 	GLViewer();
 	~GLViewer();
 	bool isAvailable();
-	void init(int argc, char **argv, sl::CameraParameters param);
+	void init(sl::CameraParameters param);
 	//void updateView(sl::Mat image, sl::Objects &obj);
 	void exit();
 	void setFloorPlaneEquation(sl::float4 eq);

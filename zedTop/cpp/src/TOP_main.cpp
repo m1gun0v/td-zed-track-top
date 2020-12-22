@@ -126,6 +126,8 @@ private:
 
 	InitParameters		init_parameters;
 	PositionalTrackingParameters positional_tracking_parameters;
+	// Configure object detection runtime parameters
+	ObjectDetectionRuntimeParameters objectTracker_parameters_rt;
 
 	bool zedAvailable = false;
 
@@ -205,6 +207,11 @@ private:
 		}
 		cout << returned_state; // this works too
 		auto camera_info = zed.getCameraInformation().camera_configuration;
+
+		viewer.init(camera_info.calibration_parameters.left_cam);
+
+		// Configure object detection runtime parameters
+		objectTracker_parameters_rt.detection_confidence_threshold = 50;
 
 
 		return true;
