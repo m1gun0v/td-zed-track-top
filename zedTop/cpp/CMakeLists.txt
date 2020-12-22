@@ -43,6 +43,7 @@ link_directories(
 file(GLOB DEP_SRC
     "derivative/GL/*.c"
     "derivative/*.cpp"
+    "derivative/*.h"
 )
 
 ###

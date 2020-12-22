@@ -2,7 +2,7 @@
 #include "glew.h"
 #include "TOP_CPlusPlusBase.h"
 #include "CPlusPlus_Common.h"
-#include "Program.h"
+#include "Shader.h"
 #include "sl/Camera.hpp"
 
 
@@ -135,7 +135,7 @@ private:
 	int32_t				myExecuteCount;
 	const char*			myError;
 
-	Program				myProgram;
+	Shader				myProgram;
 	bool				myDidSetup;
 	GLint				myModelViewUniform;
 	GLint				myColorUniform;

@@ -11,22 +11,22 @@
 * to endorse or promote products derived from this file without specific
 * prior written permission from Derivative.
 */
-#ifndef Program_h
-#define Program_h
+#ifndef Shader_h
+#define Shader_h
 
 #include "glew.h"
 
-class Program
+class Shader
 {
 public:
-    Program();
-    ~Program();
-    Program(const Program&) = delete;
-    Program& operator=(const Program&) = delete;
+	Shader();
+    ~Shader();
+	Shader(const Shader&) = delete;
+	Shader& operator=(const Shader&) = delete;
 	const char *build(const char *vertex, const char *fragment);
     GLuint getName() const;
 private:
     static GLuint compileShader(const char *source, GLenum type, const char **error);
     GLuint myProgram;
 };
-#endif /* Program_h */
+#endif /* Shaderr_h */

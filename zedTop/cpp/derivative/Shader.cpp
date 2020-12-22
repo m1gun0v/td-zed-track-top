@@ -12,7 +12,7 @@
 * prior written permission from Derivative.
 */
 
-#include "Program.h"
+#include "Shader.h"
 #ifdef __APPLE__
 #include <OpenGL/gl3.h>
 #endif
@@ -20,12 +20,12 @@
 static const char *compileError = "A shader could not be compiled.";
 static const char *linkError = "A shader could not be linked.";
 
-Program::Program()
+Shader::Shader()
 : myProgram(0)
 {
 }
 
-Program::~Program()
+Shader::~Shader()
 {
     if (myProgram)
     {
@@ -34,7 +34,7 @@ Program::~Program()
     }
 }
 
-const char * Program::build(const char *vertex, const char *fragment)
+const char * Shader::build(const char *vertex, const char *fragment)
 {
 	const char *error = nullptr;
 	GLuint vertexShader = 0, fragmentShader = 0;
@@ -84,14 +84,12 @@ const char * Program::build(const char *vertex, const char *fragment)
 	return error;
 }
 
-GLuint
-Program::getName() const
+GLuint Shader::getName() const
 {
     return myProgram;
 }
 
-GLuint
-Program::compileShader(const char *source, GLenum type, const char **error)
+GLuint Shader::compileShader(const char *source, GLenum type, const char **error)
 {
     GLuint shader = glCreateShader(type);
     glShaderSource(shader, 1, &source, nullptr);
