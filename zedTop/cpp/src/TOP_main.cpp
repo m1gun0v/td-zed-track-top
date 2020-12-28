@@ -49,8 +49,6 @@ public:
 			needGLEWInit = false;
 			context->beginGLCommands();
 
-
-
 			zedAvailable = initZed();
 			if (zedAvailable) {
 				auto camera_info = zed.getCameraInformation().camera_configuration;
@@ -70,7 +68,14 @@ public:
 	}
 
 	void setupParameters(OP_ParameterManager* manager, void* reserved1) override
-	{}
+	{
+		OP_NumericParameter	np;
+
+		np.name = "Drawzedtexture1";
+		np.label = "Drawzedtexture 1";
+		OP_ParAppendResult res = manager->appendToggle(np);
+		assert(res == OP_ParAppendResult::Success);
+	}
 
 	void getGeneralInfo(TOP_GeneralInfo* ginfo, const OP_Inputs*, void *reserved1) override
 	{
@@ -92,8 +97,12 @@ public:
 		// beginGLCommands()/endGLCommands() block
 		//double speed = inputs->getParDouble("Speed");
 		double speed = 1.00;
+		int32_t drawZedtex = inputs->getParInt("Drawzedtexture1");
 		context->beginGLCommands();
 		setupGL();
+
+
+
 
 		if (viewer.isAvailable() && (zed.grab() == ERROR_CODE::SUCCESS))
 		{
@@ -111,7 +120,7 @@ public:
 			//zed.retrieveObjects(bodies, objectTracker_parameters_rt);
 
 			//Update GL View
-			viewer.updateView(image);
+			viewer.updateView(image, drawZedtex);
 
 			//glClearColor(0.0, 0.0, 0.0, 0.0);
 			//glClear(GL_COLOR_BUFFER_BIT);

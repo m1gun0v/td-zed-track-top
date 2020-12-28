@@ -86,26 +86,13 @@ void GLViewer::setFloorPlaneEquation(sl::float4 eq) {
 	floor_plane_eq = eq;
 }
 
-void GLViewer::render() {
-	if (available) {
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glClearColor(bckgrnd_clr.r, bckgrnd_clr.g, bckgrnd_clr.b, 1.f);
-		mtx.lock();
-		update();
-		draw();
-		//printText();
-		mtx.unlock();
-		//glutSwapBuffers();
-		//glutPostRedisplay();
-	}
-}
 
 
-void GLViewer::updateView(sl::Mat image) {
+void GLViewer::updateView(sl::Mat image, int32_t drawZedTex) {
 	mtx.lock();
 	// Update Image
 	image_handler.pushNewImage(image);
-	draw();
+	draw(drawZedTex);
 	mtx.unlock();
 };
 
@@ -126,9 +113,12 @@ void GLViewer::update() {
 	//clearInputs();
 }
 
-void GLViewer::draw() {
+void GLViewer::draw(int32_t drawZedTex) {
 	glDisable(GL_DEPTH_TEST);
-	image_handler.draw();
+	if (drawZedTex) {
+		image_handler.draw();
+	}
+
 
 	//glUseProgram(shaderSK.it.getProgramId());
 	//glUniformMatrix4fv(shaderSK.MVP_Mat, 1, GL_TRUE, projection_.m);

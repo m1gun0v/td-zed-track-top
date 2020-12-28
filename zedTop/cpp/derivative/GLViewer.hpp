@@ -68,15 +68,14 @@ public:
 	~GLViewer();
 	bool isAvailable();
 	void init(sl::CameraParameters param);
-	void updateView(sl::Mat image);
+	void updateView(sl::Mat image, int32_t drawZedTex);
 	//void updateView(sl::Mat image, sl::Objects &obj);
 	void exit();
 	void setFloorPlaneEquation(sl::float4 eq);
 
 private:
 	void update();
-	void draw();
-	void render();
+	void draw(int32_t drawZedTex);
 
 	bool available;
 	std::mutex mtx;
