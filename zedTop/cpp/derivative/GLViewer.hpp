@@ -21,12 +21,12 @@
 #endif
 
 
-class VShader {
+class Shader {
 public:
 
-	VShader() {}
-	VShader(GLchar* vs, GLchar* fs);
-	~VShader();
+	Shader() {}
+	Shader(GLchar* vs, GLchar* fs);
+	~Shader();
 	GLuint getProgramId();
 //
 	static const GLint ATTRIB_VERTICES_POS = 0;
@@ -37,6 +37,75 @@ public:
 	GLuint verterxId_;
 	GLuint fragmentId_;
 	GLuint programId_;
+};
+
+struct ShaderData {
+	Shader it;
+	GLuint MVP_Mat;
+};
+
+class Simple3DObject {
+public:
+
+	Simple3DObject();
+	~Simple3DObject();
+
+	void init();
+	bool isInit();
+	void addPt(sl::float3 pt);
+	void addClr(sl::float4 clr);
+	void addNormal(sl::float3 normal);
+	void addPoints(std::vector<sl::float3> pts, sl::float4 base_clr);
+	void addBoundingBox(std::vector<sl::float3> bbox, sl::float4 base_clr);
+	void addPoint(sl::float3 pt, sl::float4 clr);
+	void addLine(sl::float3 p1, sl::float3 p2, sl::float3 clr);
+	void addCylinder(sl::float3 startPosition, sl::float3 endPosition, sl::float4 clr);
+	void addSphere(sl::float3 position, sl::float4 clr);
+	void pushToGPU();
+	void clear();
+
+	void setDrawingType(GLenum type);
+
+	void draw();
+
+	void translate(const sl::Translation& t);
+	void setPosition(const sl::Translation& p);
+
+	void setRT(const sl::Transform& mRT);
+
+	void rotate(const sl::Orientation& rot);
+	void rotate(const sl::Rotation& m);
+	void setRotation(const sl::Orientation& rot);
+	void setRotation(const sl::Rotation& m);
+
+	const sl::Translation& getPosition() const;
+
+	sl::Transform getModelMatrix() const;
+
+private:
+	std::vector<float> vertices_;
+	std::vector<float> colors_;
+	std::vector<unsigned int> indices_;
+	std::vector<float> normals_;
+
+	bool isStatic_;
+	bool is_init;
+	bool can_draw;
+
+	GLenum drawingType_;
+
+	GLuint vaoID_;
+	/*
+	Vertex buffer IDs:
+	- [0]: Vertices coordinates;
+	- [1]: Colors;
+	- [2]: Indices;
+	- [3]: Normals
+	*/
+	GLuint vboID_[4];
+
+	sl::Translation position_;
+	sl::Orientation rotation_;
 };
 
 class ImageHandler {
@@ -57,8 +126,15 @@ private:
 	GLuint texID;
 	GLuint imageTex;
 	cudaGraphicsResource* cuda_gl_ressource;//cuda GL resource
-	VShader shader;
+	Shader shader;
 	GLuint quad_vb;
+};
+
+struct ObjectClassName {
+	sl::float3 position;
+	std::string name_lineA;
+	std::string name_lineB;
+	sl::float4 color;
 };
 
 // This class manages input events, window and Opengl rendering pipeline
@@ -68,7 +144,7 @@ public:
 	~GLViewer();
 	bool isAvailable();
 	void init(sl::CameraParameters param);
-	void updateView(sl::Mat image, int32_t drawZedTex);
+	void updateView(sl::Mat image, sl::Objects &obj, int32_t drawZedTex);
 	//void updateView(sl::Mat image, sl::Objects &obj);
 	void exit();
 	void setFloorPlaneEquation(sl::float4 eq);
@@ -80,18 +156,17 @@ private:
 	bool available;
 	std::mutex mtx;
 
-	//ShaderData shaderBasic;
-	//ShaderData shaderSK;
+	ShaderData shaderBasic;
+	ShaderData shaderSK;
 
 	sl::Transform projection_;
 	ImageHandler image_handler;
 	sl::float3 bckgrnd_clr;
 
-	//std::vector<ObjectClassName> objectsName;
-
-	//Simple3DObject BBox_obj;
-	//Simple3DObject bones;
-	//Simple3DObject joints;
+	std::vector<ObjectClassName> objectsName;
+	Simple3DObject BBox_obj;
+	Simple3DObject bones;
+	Simple3DObject joints;
 
 	bool floor_plane_set = false;
 	sl::float4 floor_plane_eq;

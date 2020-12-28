@@ -95,14 +95,9 @@ public:
 
 		// These functions must be called before
 		// beginGLCommands()/endGLCommands() block
-		//double speed = inputs->getParDouble("Speed");
 		double speed = 1.00;
 		int32_t drawZedtex = inputs->getParInt("Drawzedtexture1");
 		context->beginGLCommands();
-		setupGL();
-
-
-
 
 		if (viewer.isAvailable() && (zed.grab() == ERROR_CODE::SUCCESS))
 		{
@@ -117,10 +112,10 @@ public:
 			zed.retrieveImage(image, VIEW::LEFT, MEM::GPU);
 
 			// Retrieve Detected Human Bodies
-			//zed.retrieveObjects(bodies, objectTracker_parameters_rt);
+			zed.retrieveObjects(bodies, objectTracker_parameters_rt);
 
 			//Update GL View
-			viewer.updateView(image, drawZedtex);
+			viewer.updateView(image, bodies, drawZedtex);
 
 			//glClearColor(0.0, 0.0, 0.0, 0.0);
 			//glClear(GL_COLOR_BUFFER_BIT);
@@ -259,7 +254,6 @@ private:
 
 	void configureObjectDetectionParameters() {
 		// Configure object detection runtime parameters
-		ObjectDetectionRuntimeParameters objectTracker_parameters_rt;
 		objectTracker_parameters_rt.detection_confidence_threshold = 50;
 
 		// Create ZED Objects filled in the main loop
@@ -271,43 +265,6 @@ private:
 
 										  // Main Loop
 		bool need_floor_plane = positional_tracking_parameters.set_as_static;
-	}
-
-	void setupGL()
-	{
-		if (myDidSetup == false)
-		{
-			//myError = myProgram.build(vertexShader, fragmentShader);
-
-			//// If an error occurred creating myProgram, we can't proceed
-			//if (myError == nullptr)
-			//{
-			//	GLint vertAttribLocation = glGetAttribLocation(myProgram.getName(), "P");
-			//	myModelViewUniform = glGetUniformLocation(myProgram.getName(), "uModelView");
-			//	myColorUniform = glGetUniformLocation(myProgram.getName(), "uColor");
-
-			//	if (vertAttribLocation == -1 || myModelViewUniform == -1 || myColorUniform == -1)
-			//	{
-			//		myError = uniformError;
-			//	}
-
-				//// Set up our two shapes
-				//GLfloat square[] = {
-				//	-0.5, -0.5, 1.0,
-				//	0.5, -0.5, 1.0,
-				//	-0.5,  0.5, 1.0,
-
-				//	0.5, -0.5, 1.0,
-				//	0.5,  0.5, 1.0,
-				//	-0.5,  0.5, 1.0
-				//};
-
-				//mySquare.setVertices(square, 2 * 9);
-				//mySquare.setup(vertAttribLocation);
-			//}
-
-			//myDidSetup = true;
-		}
 	}
 
 };

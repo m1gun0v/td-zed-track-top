@@ -1,7 +1,58 @@
 #include "GLViewer.hpp"
 //#include <random>
 
+GLchar* VERTEX_SHADER =
+"#version 330 core\n"
+"layout(location = 0) in vec3 in_Vertex;\n"
+"layout(location = 1) in vec4 in_Color;\n"
+"uniform mat4 u_mvpMatrix;\n"
+"out vec4 b_color;\n"
+"void main() {\n"
+"   b_color = in_Color;\n"
+"	gl_Position = u_mvpMatrix * vec4(in_Vertex, 1);\n"
+"}";
 
+GLchar* FRAGMENT_SHADER =
+"#version 330 core\n"
+"in vec4 b_color;\n"
+"layout(location = 0) out vec4 out_Color;\n"
+"void main() {\n"
+" float gamma = 2.2;\n"
+"   out_Color = b_color;//pow(b_color, vec4(1.0/gamma));;\n"
+"}";
+
+GLchar* SK_VERTEX_SHADER =
+"#version 330 core\n"
+"layout(location = 0) in vec3 in_Vertex;\n"
+"layout(location = 1) in vec4 in_Color;\n"
+"layout(location = 2) in vec3 in_Normal;\n"
+"out vec4 b_color;\n"
+"out vec3 b_position;\n"
+"out vec3 b_normal;\n"
+"uniform mat4 u_mvpMatrix;\n"
+"uniform vec4 u_color;\n"
+"void main() {\n"
+"   b_color = in_Color;\n"
+"   b_position = in_Vertex;\n"
+"   b_normal = in_Normal;\n"
+"	gl_Position =  u_mvpMatrix * vec4(in_Vertex, 1);\n"
+"}";
+
+GLchar* SK_FRAGMENT_SHADER =
+"#version 330 core\n"
+"in vec4 b_color;\n"
+"in vec3 b_position;\n"
+"in vec3 b_normal;\n"
+"out vec4 out_Color;\n"
+"void main() {\n"
+"	vec3 lightPosition = vec3(0, 10, 0);\n"
+"	vec3 lightColor = vec3(1,1,1);\n"
+"	float ambientStrength = 0.3;\n"
+"	vec3 ambient = ambientStrength * lightColor;\n"
+"	vec3 lightDir = normalize(lightPosition - b_position);\n"
+"	float diffuse = (1 - ambientStrength) * max(dot(b_normal, lightDir), 0.0);\n"
+"   out_Color = vec4(b_color.rgb * (diffuse + ambient), 1);\n"
+"}";
 
 GLViewer::GLViewer() : available(false) {
 	//currentInstance_ = this;
@@ -45,12 +96,12 @@ void GLViewer::init(sl::CameraParameters param) {
 
 	glEnable(GL_FRAMEBUFFER_SRGB);
 
-	// Compile and create the shader for 3D objects
-	//shaderBasic.it = VShader(VERTEX_SHADER, FRAGMENT_SHADER);
-	//shaderBasic.MVP_Mat = glGetUniformLocation(shaderBasic.it.getProgramId(), "u_mvpMatrix");
+	//Compile and create the shader for 3D objects
+	shaderBasic.it = Shader(VERTEX_SHADER, FRAGMENT_SHADER);
+	shaderBasic.MVP_Mat = glGetUniformLocation(shaderBasic.it.getProgramId(), "u_mvpMatrix");
 
-	//shaderSK.it = VShader(SK_VERTEX_SHADER, SK_FRAGMENT_SHADER);
-	//shaderSK.MVP_Mat = glGetUniformLocation(shaderSK.it.getProgramId(), "u_mvpMatrix");
+	shaderSK.it = Shader(SK_VERTEX_SHADER, SK_FRAGMENT_SHADER);
+	shaderSK.MVP_Mat = glGetUniformLocation(shaderSK.it.getProgramId(), "u_mvpMatrix");
 
 	// Create the rendering camera
 	//setRenderCameraProjection(param, 0.5f, 20); TODO add
@@ -86,12 +137,21 @@ void GLViewer::setFloorPlaneEquation(sl::float4 eq) {
 	floor_plane_eq = eq;
 }
 
+inline bool renderObject(const sl::ObjectData& i) {
+	return (i.tracking_state == sl::OBJECT_TRACKING_STATE::OK || i.tracking_state == sl::OBJECT_TRACKING_STATE::OFF);
+}
 
-
-void GLViewer::updateView(sl::Mat image, int32_t drawZedTex) {
+void GLViewer::updateView(sl::Mat image, sl::Objects &objects, int32_t drawZedTex) {
 	mtx.lock();
 	// Update Image
 	image_handler.pushNewImage(image);
+
+	// Clear frames object
+	BBox_obj.clear();
+	objectsName.clear();
+	bones.clear();
+	joints.clear();
+
 	draw(drawZedTex);
 	mtx.unlock();
 };
@@ -136,10 +196,369 @@ void GLViewer::draw(int32_t drawZedTex) {
 }
 
 
+
+
+//////////////////////////// SIMPLE 3D OBJECT ////////////////////
+Simple3DObject::Simple3DObject() {
+	is_init = can_draw = false;
+}
+
+Simple3DObject::~Simple3DObject() {
+	if (vaoID_ != 0) {
+		glDeleteBuffers(4, vboID_);
+		glDeleteVertexArrays(1, &vaoID_);
+		vaoID_ = 0;
+		is_init = can_draw = false;
+	}
+}
+
+bool Simple3DObject::isInit()
+{
+	return is_init;
+}
+
+void Simple3DObject::init() {
+	vaoID_ = 0;
+	isStatic_ = false;
+	drawingType_ = GL_TRIANGLES;
+	rotation_.setIdentity();
+	is_init = true;
+}
+
+void Simple3DObject::addPt(sl::float3 pt) {
+	vertices_.push_back(pt.x);
+	vertices_.push_back(pt.y);
+	vertices_.push_back(pt.z);
+}
+
+void Simple3DObject::addClr(sl::float4 clr) {
+	colors_.push_back(clr.r);
+	colors_.push_back(clr.g);
+	colors_.push_back(clr.b);
+	colors_.push_back(clr.a);
+}
+
+void Simple3DObject::addNormal(sl::float3 normal) {
+	normals_.push_back(normal.x);
+	normals_.push_back(normal.y);
+	normals_.push_back(normal.z);
+}
+void Simple3DObject::addPoints(std::vector<sl::float3> pts, sl::float4 base_clr)
+{
+	for (int k = 0; k < pts.size(); k++) {
+		sl::float3 pt = pts.at(k);
+		vertices_.push_back(pt.x);
+		vertices_.push_back(pt.y);
+		vertices_.push_back(pt.z);
+		colors_.push_back(base_clr.r);
+		colors_.push_back(base_clr.g);
+		colors_.push_back(base_clr.b);
+		colors_.push_back(1.f);
+		int current_size_index = (vertices_.size() / 3 - 1);
+		indices_.push_back(current_size_index);
+		indices_.push_back(current_size_index + 1);
+	}
+}
+
+void Simple3DObject::addPoint(sl::float3 pt, sl::float4 clr) {
+	addPt(pt);
+	addClr(clr);
+	indices_.push_back((int)indices_.size());
+}
+
+const std::vector<int> boxLinks = { 0,1,5,4,1,2,6,5,2,3,7,6,3,0,4,7 };
+
+void Simple3DObject::addBoundingBox(std::vector<sl::float3> bbox, sl::float4 base_clr) {
+
+	int start_id = vertices_.size() / 3;
+
+	float ratio = 1.f / 5.f;
+
+	std::vector<sl::float3> bbox_;
+	// generate TOP BOX
+	for (int i = 0; i < 4; i++)
+		bbox_.push_back(bbox[i]);
+	// generate TOP BOX FADE
+	for (int i = 4; i < 8; i++) {
+		auto midd = bbox[i - 4] - (bbox[i - 4] - bbox[i]) * ratio;
+		bbox_.push_back(midd);
+	}
+
+	// generate BOTTOM FADE
+	for (int i = 4; i < 8; i++) {
+		auto midd = bbox[i] + (bbox[i - 4] - bbox[i]) * ratio;
+		bbox_.push_back(midd);
+	}
+	// generate BOTTOM BOX
+	for (int i = 4; i < 8; i++)
+		bbox_.push_back(bbox[i]);
+
+	for (int i = 0; i < bbox_.size(); i++) {
+		vertices_.push_back(bbox_[i].x);
+		vertices_.push_back(bbox_[i].y);
+		vertices_.push_back(bbox_[i].z);
+
+		colors_.push_back(base_clr.r);
+		colors_.push_back(base_clr.g);
+		colors_.push_back(base_clr.b);
+		colors_.push_back(((i > 3) && (i < 12)) ? 0 : base_clr.a); //fading
+	}
+
+	for (int i = 0; i < boxLinks.size(); i += 4) {
+		indices_.push_back(start_id + boxLinks[i]);
+		indices_.push_back(start_id + boxLinks[i + 1]);
+		indices_.push_back(start_id + boxLinks[i + 2]);
+		indices_.push_back(start_id + boxLinks[i + 3]);
+	}
+
+	for (int i = 0; i < boxLinks.size(); i += 4) {
+		indices_.push_back(start_id + 8 + boxLinks[i]);
+		indices_.push_back(start_id + 8 + boxLinks[i + 1]);
+		indices_.push_back(start_id + 8 + boxLinks[i + 2]);
+		indices_.push_back(start_id + 8 + boxLinks[i + 3]);
+	}
+}
+
+void Simple3DObject::addLine(sl::float3 p1, sl::float3 p2, sl::float3 clr) {
+	vertices_.push_back(p1.x);
+	vertices_.push_back(p1.y);
+	vertices_.push_back(p1.z);
+
+	vertices_.push_back(p2.x);
+	vertices_.push_back(p2.y);
+	vertices_.push_back(p2.z);
+
+	colors_.push_back(clr.r);
+	colors_.push_back(clr.g);
+	colors_.push_back(clr.b);
+	colors_.push_back(1.f);
+
+	colors_.push_back(clr.r);
+	colors_.push_back(clr.g);
+	colors_.push_back(clr.b);
+	colors_.push_back(1.f);
+
+	indices_.push_back((int)indices_.size());
+	indices_.push_back((int)indices_.size());
+}
+
+void Simple3DObject::addCylinder(sl::float3 startPosition, sl::float3 endPosition, sl::float4 clr) {
+	const float m_radius = 0.010f;
+
+	sl::float3 dir = endPosition - startPosition;
+	float m_height = dir.norm();
+	dir = dir / m_height;
+
+	sl::float3 yAxis(0, 1, 0);
+	sl::float3 v = sl::float3::cross(dir, yAxis);
+	sl::Transform rotation;
+
+	if (v.norm() < 0.00001f)
+		rotation.setIdentity();
+	else {
+		float cosTheta = sl::float3::dot(dir, yAxis);
+		float scale = (1.f - cosTheta) / (1.f - (cosTheta * cosTheta));
+
+		float data[] = { 0    , v[2] , -v[1], 0,
+			-v[2], 0    , v[0] , 0,
+			v[1] , -v[0], 0    , 0,
+			0    , 0    , 0    , 1.f };
+
+		sl::Transform vx = sl::Transform(data);
+		rotation.setIdentity();
+		rotation = rotation + vx;
+		rotation = rotation + vx * vx * scale;
+	}
+
+	/////////////////////////////
+
+	sl::float3 v1;
+	sl::float3 v2;
+	sl::float3 v3;
+	sl::float3 v4;
+	sl::float3 normal;
+
+	const int NB_SEG = 32;
+	const float scale_seg = 1.f / NB_SEG;
+	auto rot = rotation.getRotationMatrix();
+	for (int j = 0; j < NB_SEG; j++) {
+		float i = 2.f * M_PI * (j * scale_seg);
+		float i1 = 2.f * M_PI * ((j + 1) * scale_seg);
+		v1 = sl::float3(m_radius * cos(i), 0, m_radius * sin(i)) * rot + startPosition;
+		v2 = sl::float3(m_radius * cos(i), m_height, m_radius * sin(i)) * rot + startPosition;
+		v3 = sl::float3(m_radius * cos(i1), 0, m_radius * sin(i1)) * rot + startPosition;
+		v4 = sl::float3(m_radius * cos(i1), m_height, m_radius * sin(i1)) * rot + startPosition;
+
+		addPoint(v1, clr);
+		addPoint(v2, clr);
+		addPoint(v4, clr);
+		addPoint(v3, clr);
+
+		normal = sl::float3::cross((v2 - v1), (v3 - v1));
+		normal = normal / normal.norm();
+
+		addNormal(normal);
+		addNormal(normal);
+		addNormal(normal);
+		addNormal(normal);
+	}
+}
+
+void Simple3DObject::addSphere(sl::float3 position, sl::float4 clr) {
+	const float m_radius = 0.02f;
+	const int m_stackCount = 16;
+	const int m_sectorCount = 16;
+
+	sl::float3 point;
+	sl::float3 normal;
+
+	int i, j;
+	for (i = 0; i <= m_stackCount; i++) {
+		double lat0 = M_PI * (-0.5 + (double)(i - 1) / m_stackCount);
+		double z0 = sin(lat0);
+		double zr0 = cos(lat0);
+
+		double lat1 = M_PI * (-0.5 + (double)i / m_stackCount);
+		double z1 = sin(lat1);
+		double zr1 = cos(lat1);
+		for (j = 0; j <= m_sectorCount - 1; j++) {
+			double lng = 2 * M_PI * (double)(j - 1) / m_sectorCount;
+			double x = cos(lng);
+			double y = sin(lng);
+
+			point = sl::float3(m_radius * x * zr0, m_radius * y * zr0, m_radius * z0) + position;
+			normal = sl::float3(x * zr0, y * zr0, z0);
+			normal = normal / normal.norm();
+			addPoint(point, clr);
+			addNormal(normal);
+
+			point = sl::float3(m_radius * x * zr1, m_radius * y * zr1, m_radius * z1) + position;
+			normal = sl::float3(x * zr1, y * zr1, z1);
+			normal = normal / normal.norm();
+			addPoint(point, clr);
+			addNormal(normal);
+
+			lng = 2 * M_PI * (double)(j) / m_sectorCount;
+			x = cos(lng);
+			y = sin(lng);
+
+			point = sl::float3(m_radius * x * zr1, m_radius * y * zr1, m_radius * z1) + position;
+			normal = sl::float3(x * zr1, y * zr1, z1);
+			normal = normal / normal.norm();
+			addPoint(point, clr);
+			addNormal(normal);
+
+			point = sl::float3(m_radius * x * zr0, m_radius * y * zr0, m_radius * z0) + position;
+			normal = sl::float3(x * zr0, y * zr0, z0);
+			normal = normal / normal.norm();
+			addPoint(point, clr);
+			addNormal(normal);
+		}
+	}
+}
+
+void Simple3DObject::pushToGPU() {
+	if (!isStatic_ || vaoID_ == 0) {
+		if (vaoID_ == 0) {
+			glGenVertexArrays(1, &vaoID_);
+			glGenBuffers(4, vboID_);
+		}
+		glShadeModel(GL_SMOOTH);
+		if (vertices_.size() > 0) {
+			glBindVertexArray(vaoID_);
+			glBindBuffer(GL_ARRAY_BUFFER, vboID_[0]);
+			glBufferData(GL_ARRAY_BUFFER, vertices_.size() * sizeof(float), &vertices_[0], isStatic_ ? GL_STATIC_DRAW : GL_DYNAMIC_DRAW);
+			glVertexAttribPointer(Shader::ATTRIB_VERTICES_POS, 3, GL_FLOAT, GL_FALSE, 0, 0);
+			glEnableVertexAttribArray(Shader::ATTRIB_VERTICES_POS);
+		}
+		if (colors_.size() > 0) {
+			glBindBuffer(GL_ARRAY_BUFFER, vboID_[1]);
+			glBufferData(GL_ARRAY_BUFFER, colors_.size() * sizeof(float), &colors_[0], isStatic_ ? GL_STATIC_DRAW : GL_DYNAMIC_DRAW);
+			glVertexAttribPointer(Shader::ATTRIB_COLOR_POS, 4, GL_FLOAT, GL_FALSE, 0, 0);
+			glEnableVertexAttribArray(Shader::ATTRIB_COLOR_POS);
+		}
+		if (indices_.size() > 0) {
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboID_[2]);
+			glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices_.size() * sizeof(unsigned int), &indices_[0], isStatic_ ? GL_STATIC_DRAW : GL_DYNAMIC_DRAW);
+			can_draw = true;
+		}
+		if (normals_.size() > 0) {
+			glBindBuffer(GL_ARRAY_BUFFER, vboID_[3]);
+			glBufferData(GL_ARRAY_BUFFER, normals_.size() * sizeof(float), &normals_[0], isStatic_ ? GL_STATIC_DRAW : GL_DYNAMIC_DRAW);
+			glVertexAttribPointer(Shader::ATTRIB_NORMAL, 3, GL_FLOAT, GL_FALSE, 0, 0);
+			glEnableVertexAttribArray(Shader::ATTRIB_NORMAL);
+		}
+
+		glBindVertexArray(0);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+	}
+}
+
+void Simple3DObject::clear() {
+	vertices_.clear();
+	colors_.clear();
+	indices_.clear();
+	normals_.clear();
+	can_draw = false;
+}
+
+void Simple3DObject::setDrawingType(GLenum type) {
+	drawingType_ = type;
+}
+
+void Simple3DObject::draw() {
+	if (can_draw && vaoID_) {
+		glBindVertexArray(vaoID_);
+		glDrawElements(drawingType_, (GLsizei)indices_.size(), GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+	}
+}
+
+void Simple3DObject::translate(const sl::Translation& t) {
+	position_ = position_ + t;
+}
+
+void Simple3DObject::setPosition(const sl::Translation& p) {
+	position_ = p;
+}
+
+void Simple3DObject::setRT(const sl::Transform& mRT) {
+	position_ = mRT.getTranslation();
+	rotation_ = mRT.getOrientation();
+}
+
+void Simple3DObject::rotate(const sl::Orientation& rot) {
+	rotation_ = rot * rotation_;
+}
+
+void Simple3DObject::rotate(const sl::Rotation& m) {
+	this->rotate(sl::Orientation(m));
+}
+
+void Simple3DObject::setRotation(const sl::Orientation& rot) {
+	rotation_ = rot;
+}
+
+void Simple3DObject::setRotation(const sl::Rotation& m) {
+	this->setRotation(sl::Orientation(m));
+}
+
+const sl::Translation& Simple3DObject::getPosition() const {
+	return position_;
+}
+
+sl::Transform Simple3DObject::getModelMatrix() const {
+	sl::Transform tmp;
+	tmp.setOrientation(rotation_);
+	tmp.setTranslation(position_);
+	return tmp;
+}
+
 /////////////////////////// SHADER //////////////////////
 
 
-VShader::VShader(GLchar* vs, GLchar* fs) {
+Shader::Shader(GLchar* vs, GLchar* fs) {
 	if (!compile(verterxId_, GL_VERTEX_SHADER, vs)) {
 		std::cout << "ERROR: while compiling vertex shader" << std::endl;
 	}
@@ -174,7 +593,7 @@ VShader::VShader(GLchar* vs, GLchar* fs) {
 	}
 }
 
-VShader::~VShader() {
+Shader::~Shader() {
 	if (verterxId_ != 0)
 		glDeleteShader(verterxId_);
 	if (fragmentId_ != 0)
@@ -183,11 +602,11 @@ VShader::~VShader() {
 		glDeleteShader(programId_);
 }
 
-GLuint VShader::getProgramId() {
+GLuint Shader::getProgramId() {
 	return programId_;
 }
 
-bool VShader::compile(GLuint &shaderId, GLenum type, GLchar* src) {
+bool Shader::compile(GLuint &shaderId, GLenum type, GLchar* src) {
 	shaderId = glCreateShader(type);
 	if (shaderId == 0) {
 		std::cout << "ERROR: shader type (" << type << ") does not exist" << std::endl;
@@ -250,7 +669,7 @@ void ImageHandler::close() {
 }
 
 bool ImageHandler::initialize(sl::Resolution res) {
-	shader = VShader(IMAGE_VERTEX_SHADER, IMAGE_FRAGMENT_SHADER);
+	shader = Shader(IMAGE_VERTEX_SHADER, IMAGE_FRAGMENT_SHADER);
 	texID = glGetUniformLocation(shader.getProgramId(), "texImage");
 	static const GLfloat g_quad_vertex_buffer_data[] = {
 		-1.0f, -1.0f, 0.0f,
