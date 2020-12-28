@@ -11,7 +11,7 @@ GLViewer::~GLViewer() {}
 
 void GLViewer::exit() {
 	//if (currentInstance_) {
-		// image_handler.close(); CHECK
+		image_handler.close();
 		available = false;
 	//}
 }
@@ -84,6 +84,65 @@ void GLViewer::init(sl::CameraParameters param) {
 void GLViewer::setFloorPlaneEquation(sl::float4 eq) {
 	floor_plane_set = true;
 	floor_plane_eq = eq;
+}
+
+void GLViewer::render() {
+	if (available) {
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glClearColor(bckgrnd_clr.r, bckgrnd_clr.g, bckgrnd_clr.b, 1.f);
+		mtx.lock();
+		update();
+		draw();
+		//printText();
+		mtx.unlock();
+		//glutSwapBuffers();
+		//glutPostRedisplay();
+	}
+}
+
+
+void GLViewer::updateView(sl::Mat image) {
+	mtx.lock();
+	// Update Image
+	image_handler.pushNewImage(image);
+	draw();
+	mtx.unlock();
+};
+
+void GLViewer::update() {
+	//if (keyStates_['q'] == KEY_STATE::UP || keyStates_['Q'] == KEY_STATE::UP || keyStates_[27] == KEY_STATE::UP)
+	//	currentInstance_->exit();
+
+	//if (keyStates_['b'] == KEY_STATE::UP || keyStates_['B'] == KEY_STATE::UP)
+	//	currentInstance_->drawBbox = !currentInstance_->drawBbox;
+
+	// Update BBox
+	// TODO, riaggiungi
+	//BBox_obj.pushToGPU();
+	//bones.pushToGPU();
+	//joints.pushToGPU();
+
+	//Clear inputs
+	//clearInputs();
+}
+
+void GLViewer::draw() {
+	glDisable(GL_DEPTH_TEST);
+	image_handler.draw();
+
+	//glUseProgram(shaderSK.it.getProgramId());
+	//glUniformMatrix4fv(shaderSK.MVP_Mat, 1, GL_TRUE, projection_.m);
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glEnable(GL_DEPTH_TEST);
+	//bones.draw();
+	//joints.draw();
+	//glUseProgram(0);
+
+	//glUseProgram(shaderBasic.it.getProgramId());
+	//glUniformMatrix4fv(shaderBasic.MVP_Mat, 1, GL_TRUE, projection_.m);
+
+	//BBox_obj.draw();
+	//glUseProgram(0);
 }
 
 
@@ -202,32 +261,32 @@ void ImageHandler::close() {
 
 bool ImageHandler::initialize(sl::Resolution res) {
 	shader = VShader(IMAGE_VERTEX_SHADER, IMAGE_FRAGMENT_SHADER);
-	//texID = glGetUniformLocation(shader.getProgramId(), "texImage");
-	//static const GLfloat g_quad_vertex_buffer_data[] = {
-	//	-1.0f, -1.0f, 0.0f,
-	//	1.0f, -1.0f, 0.0f,
-	//	-1.0f, 1.0f, 0.0f,
-	//	-1.0f, 1.0f, 0.0f,
-	//	1.0f, -1.0f, 0.0f,
-	//	1.0f, 1.0f, 0.0f };
+	texID = glGetUniformLocation(shader.getProgramId(), "texImage");
+	static const GLfloat g_quad_vertex_buffer_data[] = {
+		-1.0f, -1.0f, 0.0f,
+		1.0f, -1.0f, 0.0f,
+		-1.0f, 1.0f, 0.0f,
+		-1.0f, 1.0f, 0.0f,
+		1.0f, -1.0f, 0.0f,
+		1.0f, 1.0f, 0.0f };
 
-	//glGenBuffers(1, &quad_vb);
-	//glBindBuffer(GL_ARRAY_BUFFER, quad_vb);
-	//glBufferData(GL_ARRAY_BUFFER, sizeof(g_quad_vertex_buffer_data), g_quad_vertex_buffer_data, GL_STATIC_DRAW);
-	//glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glGenBuffers(1, &quad_vb);
+	glBindBuffer(GL_ARRAY_BUFFER, quad_vb);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(g_quad_vertex_buffer_data), g_quad_vertex_buffer_data, GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	//glEnable(GL_TEXTURE_2D);
-	//glGenTextures(1, &imageTex);
-	//glBindTexture(GL_TEXTURE_2D, imageTex);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, res.width, res.height, 0, GL_BGRA_EXT, GL_UNSIGNED_BYTE, NULL);
-	//glBindTexture(GL_TEXTURE_2D, 0);
-	//cudaError_t err = cudaGraphicsGLRegisterImage(&cuda_gl_ressource, imageTex, GL_TEXTURE_2D, cudaGraphicsRegisterFlagsWriteDiscard);
-	//return (err == cudaSuccess);
+	glEnable(GL_TEXTURE_2D);
+	glGenTextures(1, &imageTex);
+	glBindTexture(GL_TEXTURE_2D, imageTex);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, res.width, res.height, 0, GL_BGRA_EXT, GL_UNSIGNED_BYTE, NULL);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	cudaError_t err = cudaGraphicsGLRegisterImage(&cuda_gl_ressource, imageTex, GL_TEXTURE_2D, cudaGraphicsRegisterFlagsWriteDiscard);
+	return (err == cudaSuccess);
 	return true;
 }
 
@@ -240,17 +299,17 @@ void ImageHandler::pushNewImage(sl::Mat &image) {
 }
 
 void ImageHandler::draw() {
-	//const auto id_shade = shader.getProgramId();
-	//glUseProgram(id_shade);
-	//glActiveTexture(GL_TEXTURE0);
-	//glBindTexture(GL_TEXTURE_2D, imageTex);
-	//glUniform1i(texID, 0);
-	////invert y axis and color for this image (since its reverted from cuda array)
+	const auto id_shade = shader.getProgramId();
+	glUseProgram(id_shade);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, imageTex);
+	glUniform1i(texID, 0);
+	//invert y axis and color for this image (since its reverted from cuda array)
 
-	//glEnableVertexAttribArray(0);
-	//glBindBuffer(GL_ARRAY_BUFFER, quad_vb);
-	//glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-	//glDrawArrays(GL_TRIANGLES, 0, 6);
-	//glDisableVertexAttribArray(0);
-	//glUseProgram(0);
+	glEnableVertexAttribArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, quad_vb);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+	glDisableVertexAttribArray(0);
+	glUseProgram(0);
 }

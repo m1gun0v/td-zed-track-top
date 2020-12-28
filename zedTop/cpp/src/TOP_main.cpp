@@ -58,11 +58,6 @@ public:
 				configureObjectDetectionParameters();
 			}
 
-			//bool status_ = image_handler.initialize(param.image_size);
-			//if (!status_)
-			//	std::cout << "ERROR: Failed to initialized Image Renderer" << std::endl;
-
-			glEnable(GL_FRAMEBUFFER_SRGB);
 			context->endGLCommands();
 		}
 #endif
@@ -99,16 +94,27 @@ public:
 		context->beginGLCommands();
 		setupGL();
 
-		if (!myError && viewer.isAvailable())
+		if (viewer.isAvailable() && (zed.grab() == ERROR_CODE::SUCCESS))
 		{
+
 			int width = outputFormat->width;
 			int height = outputFormat->height;
 			glViewport(0, 0, width, height);
 			float ratio = static_cast<float>(height) / static_cast<float>(width);
 
-			glClearColor(0.0, 0.0, 0.0, 0.0);
-			glClear(GL_COLOR_BUFFER_BIT);
-			//image_handler.draw(); // SEI QUI
+
+			// Retrieve left image
+			zed.retrieveImage(image, VIEW::LEFT, MEM::GPU);
+
+			// Retrieve Detected Human Bodies
+			//zed.retrieveObjects(bodies, objectTracker_parameters_rt);
+
+			//Update GL View
+			viewer.updateView(image);
+
+			//glClearColor(0.0, 0.0, 0.0, 0.0);
+			//glClear(GL_COLOR_BUFFER_BIT);
+
 
 			//glUseProgram(myProgram.getName());
 
@@ -129,8 +135,8 @@ public:
 
 			// Tidy up
 
-			glBindVertexArray(0);
-			glUseProgram(0);
+			//glBindVertexArray(0);
+			//glUseProgram(0);
 		}
 		else {
 			cout << "fuck" << endl;
