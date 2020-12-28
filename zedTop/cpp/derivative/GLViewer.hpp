@@ -152,8 +152,10 @@ public:
 private:
 	void update();
 	void draw(int32_t drawZedTex);
+	void setRenderCameraProjection(sl::CameraParameters params, float znear, float zfar);
 
 	bool available;
+	bool drawBbox = false;
 	std::mutex mtx;
 
 	ShaderData shaderBasic;

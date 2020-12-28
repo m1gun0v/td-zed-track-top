@@ -54,6 +54,19 @@ GLchar* SK_FRAGMENT_SHADER =
 "   out_Color = vec4(b_color.rgb * (diffuse + ambient), 1);\n"
 "}";
 
+float const colors[5][3] = {
+	{ .231f, .909f, .69f },
+{ .098f, .686f, .816f },
+{ .412f, .4f, .804f },
+{ 1, .725f, .0f },
+{ .989f, .388f, .419f }
+};
+
+inline sl::float4 generateColorClass(int idx) {
+	int const offset = std::max(0, idx % 5);
+	return  sl::float4(colors[offset][0], colors[offset][1], colors[offset][2], 1.f);
+}
+
 GLViewer::GLViewer() : available(false) {
 	//currentInstance_ = this;
 }
@@ -104,17 +117,17 @@ void GLViewer::init(sl::CameraParameters param) {
 	shaderSK.MVP_Mat = glGetUniformLocation(shaderSK.it.getProgramId(), "u_mvpMatrix");
 
 	// Create the rendering camera
-	//setRenderCameraProjection(param, 0.5f, 20); TODO add
+    setRenderCameraProjection(param, 0.5f, 20);
 
 	// Create the bounding box object
-	//BBox_obj.init();
-	//BBox_obj.setDrawingType(GL_QUADS);
+	BBox_obj.init();
+	BBox_obj.setDrawingType(GL_QUADS);
 
-	//bones.init();
-	//bones.setDrawingType(GL_QUADS);
+	bones.init();
+	bones.setDrawingType(GL_QUADS);
 
-	//joints.init();
-	//joints.setDrawingType(GL_QUADS);
+	joints.init();
+	joints.setDrawingType(GL_QUADS);
 
 	floor_plane_set = false;
 	// Set background color (black)
@@ -130,6 +143,39 @@ void GLViewer::init(sl::CameraParameters param) {
 	//glutKeyboardUpFunc(GLViewer::keyReleasedCallback);
 	//glutCloseFunc(CloseFunc);
 	available = true;
+}
+
+void GLViewer::setRenderCameraProjection(sl::CameraParameters params, float znear, float zfar) {
+	// Just slightly up the ZED camera FOV to make a small black border
+	float fov_y = (params.v_fov + 0.5f) * M_PI / 180.f;
+	float fov_x = (params.h_fov + 0.5f) * M_PI / 180.f;
+
+	projection_(0, 0) = 1.0f / tanf(fov_x * 0.5f);
+	projection_(1, 1) = 1.0f / tanf(fov_y * 0.5f);
+	projection_(2, 2) = -(zfar + znear) / (zfar - znear);
+	projection_(3, 2) = -1;
+	projection_(2, 3) = -(2.f * zfar * znear) / (zfar - znear);
+	projection_(3, 3) = 0;
+
+	projection_(0, 0) = 1.0f / tanf(fov_x * 0.5f); //Horizontal FoV.
+	projection_(0, 1) = 0;
+	projection_(0, 2) = 2.0f * ((params.image_size.width - 1.0f * params.cx) / params.image_size.width) - 1.0f; //Horizontal offset.
+	projection_(0, 3) = 0;
+
+	projection_(1, 0) = 0;
+	projection_(1, 1) = 1.0f / tanf(fov_y * 0.5f); //Vertical FoV.
+	projection_(1, 2) = -(2.0f * ((params.image_size.height - 1.0f * params.cy) / params.image_size.height) - 1.0f); //Vertical offset.
+	projection_(1, 3) = 0;
+
+	projection_(2, 0) = 0;
+	projection_(2, 1) = 0;
+	projection_(2, 2) = -(zfar + znear) / (zfar - znear); //Near and far planes.
+	projection_(2, 3) = -(2.0f * zfar * znear) / (zfar - znear); //Near and far planes.
+
+	projection_(3, 0) = 0;
+	projection_(3, 1) = 0;
+	projection_(3, 2) = -1;
+	projection_(3, 3) = 0.0f;
 }
 
 void GLViewer::setFloorPlaneEquation(sl::float4 eq) {
@@ -152,25 +198,68 @@ void GLViewer::updateView(sl::Mat image, sl::Objects &objects, int32_t drawZedTe
 	bones.clear();
 	joints.clear();
 
+
+
+	// For each object
+	for (auto i = objects.object_list.rbegin(); i != objects.object_list.rend(); ++i) {
+		sl::ObjectData& obj = (*i);
+
+		// Only show tracked objects
+		if (renderObject(obj)) {
+			auto clr_id = generateColorClass(obj.id);
+
+			// draw skeletons
+			if (obj.keypoint.size()) {
+				for (auto& limb : sl::BODY_BONES) {
+					sl::float3 kp_1 = obj.keypoint[getIdx(limb.first)];
+					sl::float3 kp_2 = obj.keypoint[getIdx(limb.second)];
+					float norm_1 = kp_1.norm();
+					float norm_2 = kp_2.norm();
+					// draw cylinder between two keypoints
+					if (std::isfinite(norm_1) && std::isfinite(norm_2)) {
+						bones.addCylinder(kp_1, kp_2, clr_id);
+					}
+				}
+				for (int i = 0; i < static_cast<int>(sl::BODY_PARTS::LAST); i++) {
+					sl::float3 kp = obj.keypoint[i];
+					if (std::isfinite(kp.norm())) joints.addSphere(kp, clr_id);
+				}
+			}
+
+			// Draw Labels
+			if (drawBbox) {
+				auto &bb_ = obj.bounding_box;
+				if (bb_.size() > 0) {
+					if (floor_plane_set) {// expand bounding box to the floor
+						for (int i = 4; i < 8; i++)
+							bb_[i].y = (floor_plane_eq.x * bb_[i].x + floor_plane_eq.z * bb_[i].z + floor_plane_eq.w) / (floor_plane_eq.y * -1.f);
+					}
+					BBox_obj.addBoundingBox(bb_, clr_id);
+
+					objectsName.emplace_back();
+					objectsName.back().name_lineA = "ID : " + std::to_string(obj.id);
+					std::stringstream ss_vel;
+					ss_vel << std::fixed << std::setprecision(1) << obj.velocity.norm();
+					objectsName.back().name_lineB = ss_vel.str() + " m/s";
+					objectsName.back().color = clr_id;
+					objectsName.back().position = obj.position;
+					objectsName.back().position.y = (bb_[0].y + bb_[1].y + bb_[2].y + bb_[3].y) / 4.f + 0.2f;
+				}
+			}
+		}
+	}
+
+	update();
 	draw(drawZedTex);
+
 	mtx.unlock();
 };
 
 void GLViewer::update() {
-	//if (keyStates_['q'] == KEY_STATE::UP || keyStates_['Q'] == KEY_STATE::UP || keyStates_[27] == KEY_STATE::UP)
-	//	currentInstance_->exit();
-
-	//if (keyStates_['b'] == KEY_STATE::UP || keyStates_['B'] == KEY_STATE::UP)
-	//	currentInstance_->drawBbox = !currentInstance_->drawBbox;
-
 	// Update BBox
-	// TODO, riaggiungi
-	//BBox_obj.pushToGPU();
-	//bones.pushToGPU();
-	//joints.pushToGPU();
-
-	//Clear inputs
-	//clearInputs();
+	BBox_obj.pushToGPU();
+	bones.pushToGPU();
+	joints.pushToGPU();
 }
 
 void GLViewer::draw(int32_t drawZedTex) {
@@ -179,14 +268,13 @@ void GLViewer::draw(int32_t drawZedTex) {
 		image_handler.draw();
 	}
 
-
-	//glUseProgram(shaderSK.it.getProgramId());
-	//glUniformMatrix4fv(shaderSK.MVP_Mat, 1, GL_TRUE, projection_.m);
-	//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glUseProgram(shaderSK.it.getProgramId());
+	glUniformMatrix4fv(shaderSK.MVP_Mat, 1, GL_TRUE, projection_.m);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glEnable(GL_DEPTH_TEST);
-	//bones.draw();
-	//joints.draw();
-	//glUseProgram(0);
+	bones.draw();
+	joints.draw();
+	glUseProgram(0);
 
 	//glUseProgram(shaderBasic.it.getProgramId());
 	//glUniformMatrix4fv(shaderBasic.MVP_Mat, 1, GL_TRUE, projection_.m);
