@@ -136,12 +136,6 @@ void GLViewer::init(sl::CameraParameters param) {
 	// Set OpenGL settings
 	glDisable(GL_DEPTH_TEST); //avoid occlusion with bbox
 
-	//						  // Map glut function on this class methods
-	//glutDisplayFunc(GLViewer::drawCallback);
-	//glutReshapeFunc(GLViewer::reshapeCallback);
-	//glutKeyboardFunc(GLViewer::keyPressedCallback);
-	//glutKeyboardUpFunc(GLViewer::keyReleasedCallback);
-	//glutCloseFunc(CloseFunc);
 	available = true;
 }
 

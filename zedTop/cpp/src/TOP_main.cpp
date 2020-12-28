@@ -116,35 +116,9 @@ public:
 
 			//Update GL View
 			viewer.updateView(image, bodies, drawZedtex);
-
-			//glClearColor(0.0, 0.0, 0.0, 0.0);
-			//glClear(GL_COLOR_BUFFER_BIT);
-
-
-			//glUseProgram(myProgram.getName());
-
-			//// Draw the square
-
-			//glUniform4f(myColorUniform, static_cast<GLfloat>(color1[0]), static_cast<GLfloat>(color1[1]), static_cast<GLfloat>(color1[2]), 1.0f);
-
-			//mySquare.setTranslate(0.5f, 0.5f);
-			//mySquare.setRotation(static_cast<GLfloat>(myRotation));
-
-			//Matrix model = mySquare.getMatrix();
-			//glUniformMatrix4fv(myModelViewUniform, 1, GL_FALSE, (model * view).matrix);
-
-			//mySquare.bindVAO();
-
-			//glDrawArrays(GL_TRIANGLES, 0, mySquare.getElementCount() / 3);
-
-
-			// Tidy up
-
-			//glBindVertexArray(0);
-			//glUseProgram(0);
 		}
 		else {
-			cout << "fuck" << endl;
+			cout << "Zed viewer not available" << endl;
 
 		}
 
@@ -165,6 +139,7 @@ private:
 	Mat image;
 	Plane floor_plane; // floor plane handle
 	Transform reset_from_floor_plane; // camera transform once floor plane is detected
+	bool need_floor_plane;
 
 
 	// In this example this value will be incremented each time the execute()
@@ -255,16 +230,7 @@ private:
 	void configureObjectDetectionParameters() {
 		// Configure object detection runtime parameters
 		objectTracker_parameters_rt.detection_confidence_threshold = 50;
-
-		// Create ZED Objects filled in the main loop
-		//Objects bodies;
-		Mat image;
-
-		Plane floor_plane; // floor plane handle
-		Transform reset_from_floor_plane; // camera transform once floor plane is detected
-
-										  // Main Loop
-		bool need_floor_plane = positional_tracking_parameters.set_as_static;
+		need_floor_plane = positional_tracking_parameters.set_as_static;
 	}
 
 };
