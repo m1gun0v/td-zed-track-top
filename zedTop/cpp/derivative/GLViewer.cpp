@@ -291,11 +291,11 @@ bool ImageHandler::initialize(sl::Resolution res) {
 }
 
 void ImageHandler::pushNewImage(sl::Mat &image) {
-	//cudaArray_t ArrIm;
-	//cudaGraphicsMapResources(1, &cuda_gl_ressource, 0);
-	//cudaGraphicsSubResourceGetMappedArray(&ArrIm, cuda_gl_ressource, 0, 0);
-	//cudaMemcpy2DToArray(ArrIm, 0, 0, image.getPtr<sl::uchar1>(sl::MEM::GPU), image.getStepBytes(sl::MEM::GPU), image.getPixelBytes()*image.getWidth(), image.getHeight(), cudaMemcpyDeviceToDevice);
-	//cudaGraphicsUnmapResources(1, &cuda_gl_ressource, 0);
+	cudaArray_t ArrIm;
+	cudaGraphicsMapResources(1, &cuda_gl_ressource, 0);
+	cudaGraphicsSubResourceGetMappedArray(&ArrIm, cuda_gl_ressource, 0, 0);
+	cudaMemcpy2DToArray(ArrIm, 0, 0, image.getPtr<sl::uchar1>(sl::MEM::GPU), image.getStepBytes(sl::MEM::GPU), image.getPixelBytes()*image.getWidth(), image.getHeight(), cudaMemcpyDeviceToDevice);
+	cudaGraphicsUnmapResources(1, &cuda_gl_ressource, 0);
 }
 
 void ImageHandler::draw() {
