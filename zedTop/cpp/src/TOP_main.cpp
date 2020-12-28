@@ -74,7 +74,8 @@ public:
 
 	void getGeneralInfo(TOP_GeneralInfo* ginfo, const OP_Inputs*, void *reserved1) override
 	{
-		ginfo->memPixelType = OP_CPUMemPixelType::RGBA8Fixed;
+		//ginfo->memPixelType = OP_CPUMemPixelType::RGBA8Fixed; // Not Needed?
+		ginfo->cookEveryFrame = true;
 	}
 
 	bool getOutputFormat(TOP_OutputFormat* format, const OP_Inputs*, void* reserved1) override
@@ -140,6 +141,7 @@ public:
 		}
 		else {
 			cout << "fuck" << endl;
+
 		}
 
 		context->endGLCommands();
