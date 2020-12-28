@@ -48,15 +48,25 @@ public:
 		{
 			needGLEWInit = false;
 			context->beginGLCommands();
-			// Setup all our GL extensions using GLEW
-			glewInit();
+
+
+
+			zedAvailable = initZed();
+			if (zedAvailable) {
+				auto camera_info = zed.getCameraInformation().camera_configuration;
+				viewer.init(camera_info.calibration_parameters.left_cam);
+				configureObjectDetectionParameters();
+			}
+
+			//bool status_ = image_handler.initialize(param.image_size);
+			//if (!status_)
+			//	std::cout << "ERROR: Failed to initialized Image Renderer" << std::endl;
+
+			glEnable(GL_FRAMEBUFFER_SRGB);
 			context->endGLCommands();
 		}
 #endif
-		zedAvailable = initZed();
-		if (zedAvailable) {
-			auto camera_info = zed.getCameraInformation().camera_configuration;
-		}
+
 	}
 
 	virtual ~CustomTOP()
@@ -89,11 +99,16 @@ public:
 		context->beginGLCommands();
 		setupGL();
 
-		if (!myError)
+		if (!myError && viewer.isAvailable())
 		{
-			glViewport(0, 0, 100, 200);
+			int width = outputFormat->width;
+			int height = outputFormat->height;
+			glViewport(0, 0, width, height);
+			float ratio = static_cast<float>(height) / static_cast<float>(width);
+
 			glClearColor(0.0, 0.0, 0.0, 0.0);
 			glClear(GL_COLOR_BUFFER_BIT);
+			//image_handler.draw(); // SEI QUI
 
 			//glUseProgram(myProgram.getName());
 
@@ -117,6 +132,9 @@ public:
 			glBindVertexArray(0);
 			glUseProgram(0);
 		}
+		else {
+			cout << "fuck" << endl;
+		}
 
 		context->endGLCommands();
 	}
@@ -130,6 +148,11 @@ private:
 	ObjectDetectionRuntimeParameters objectTracker_parameters_rt;
 
 	bool zedAvailable = false;
+	// Create ZED Objects filled in the main loop
+	Objects bodies;
+	Mat image;
+	Plane floor_plane; // floor plane handle
+	Transform reset_from_floor_plane; // camera transform once floor plane is detected
 
 
 	// In this example this value will be incremented each time the execute()
@@ -143,6 +166,11 @@ private:
 	GLint				myColorUniform;
 
 	void unloadZed() {
+		// Release objects
+		image.free();
+		floor_plane.clear();
+		bodies.object_list.clear();
+
 		// Disable modules
 		zed.disableObjectDetection();
 		zed.disablePositionalTracking();
@@ -203,18 +231,29 @@ private:
 		if (returned_state != ERROR_CODE::SUCCESS) {
 			print("enable Object Detection", returned_state, "\nExit program.");
 			zed.close();
-			return EXIT_FAILURE;
+			return false;
 		}
-		cout << returned_state; // this works too
+
+		// no errors, init the camera
 		auto camera_info = zed.getCameraInformation().camera_configuration;
-
 		viewer.init(camera_info.calibration_parameters.left_cam);
+		return true;
+	}
 
+	void configureObjectDetectionParameters() {
 		// Configure object detection runtime parameters
+		ObjectDetectionRuntimeParameters objectTracker_parameters_rt;
 		objectTracker_parameters_rt.detection_confidence_threshold = 50;
 
+		// Create ZED Objects filled in the main loop
+		//Objects bodies;
+		Mat image;
 
-		return true;
+		Plane floor_plane; // floor plane handle
+		Transform reset_from_floor_plane; // camera transform once floor plane is detected
+
+										  // Main Loop
+		bool need_floor_plane = positional_tracking_parameters.set_as_static;
 	}
 
 	void setupGL()

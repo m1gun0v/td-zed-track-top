@@ -1,3 +1,5 @@
+
+
 #ifndef __VIEWER_INCLUDE__
 #define __VIEWER_INCLUDE__
 
@@ -19,6 +21,24 @@
 #endif
 
 
+class VShader {
+public:
+
+	VShader() {}
+	VShader(GLchar* vs, GLchar* fs);
+	~VShader();
+	GLuint getProgramId();
+//
+	static const GLint ATTRIB_VERTICES_POS = 0;
+	static const GLint ATTRIB_COLOR_POS = 1;
+	static const GLint ATTRIB_NORMAL = 2;
+//private:
+	bool compile(GLuint &shaderId, GLenum type, GLchar* src);
+	GLuint verterxId_;
+	GLuint fragmentId_;
+	GLuint programId_;
+};
+
 class ImageHandler {
 public:
 	ImageHandler();
@@ -37,7 +57,7 @@ private:
 	GLuint texID;
 	GLuint imageTex;
 	cudaGraphicsResource* cuda_gl_ressource;//cuda GL resource
-	//Shader shader;
+	VShader shader;
 	GLuint quad_vb;
 };
 
