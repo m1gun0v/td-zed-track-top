@@ -230,6 +230,7 @@ private:
 	void configureObjectDetectionParameters() {
 		// Configure object detection runtime parameters
 		objectTracker_parameters_rt.detection_confidence_threshold = 50;
+		objectTracker_parameters_rt.object_class_filter = { OBJECT_CLASS::PERSON /*, OBJECT_CLASS::VEHICLE, OBJECT_CLASS::ANIMAL*/ };
 		need_floor_plane = positional_tracking_parameters.set_as_static;
 	}
 
