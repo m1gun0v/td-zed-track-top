@@ -13,7 +13,9 @@ Now in the build folder, you should have all the Zed Official examples ready to 
 Copy the file "C:\Program Files (x86)\ZED SDK\bin\sl_zed64.dll" into the folder where your TouchDesigner executable is, usually C:/Program Files/Derivative/TouchDesigner/bin/.
 If there is already a file with that name, overwrite it, it is probably an old version of the Zed SDK.
 
- If the previous step works, open Visual Studio -> File -> Open -> Cmake and open the file "ZedTop/CMakeList.txt". Press Build all. Open TouchDesigner, create a new CplusPlus TOP and as dll give the path 'zedTop/cpp/out/CustomTOP.dll'
+ If the previous step works, open Visual Studio -> File -> Open -> Cmake and open the file "ZedTop/CMakeList.txt". Press Cmake -> Build all. Open TouchDesigner, create a new CplusPlus TOP and as dll give the path 'zedTop/cpp/out/CustomTOP.dll'
+
+
 
 
 

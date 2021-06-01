@@ -11,19 +11,30 @@ endif()
 
 SET(SPECIAL_OS_LIBS "")
 
+if(COMMAND cmake_policy)
+        cmake_policy(SET CMP0003 OLD)
+        cmake_policy(SET CMP0004 OLD)
+        cmake_policy(SET CMP0015 OLD)
+endif(COMMAND cmake_policy)
+
 find_package(ZED 3 REQUIRED)
+find_package(OpenCV REQUIRED)
 find_package(GLUT REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(CUDA REQUIRED)
 
-
+IF(NOT WIN32)
+    SET(SPECIAL_OS_LIBS "pthread" "X11")
+    add_definitions(-Wno-write-strings)
+ENDIF()
 
 include_directories(
     "src"
     "derivative"
     "derivative/GL"
     ${CMAKE_CURRENT_SOURCE_DIR}/libs/include
+    ${OpenCV_INCLUDE_DIRS}
     ${ZED_INCLUDE_DIRS}
     ${GLEW_INCLUDE_DIRS}
     ${GLUT_INCLUDE_DIR}
@@ -38,6 +49,7 @@ link_directories(
     ${GLUT_LIBRARY_DIRS}
     ${OpenGL_LIBRARY_DIRS}
     ${CUDA_LIBRARY_DIRS}
+    ${OpenCV_LIBRARY_DIRS}
 )
 
 file(GLOB DEP_SRC
@@ -67,6 +79,7 @@ if (LINK_SHARED_ZED)
 else()
     SET(ZED_LIBS ${ZED_STATIC_LIBRARIES} ${CUDA_CUDA_LIBRARY} ${CUDA_LIBRARY})
 endif()
+
 
 
 function(BuiltCustomOp OPNAME SRC LIBRARIES)
