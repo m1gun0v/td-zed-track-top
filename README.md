@@ -19,13 +19,15 @@ Now in the build folder, you should have all the Zed Official examples ready to 
  Copy the file 'zedTop/cpp/out/CustomTOP.dll' inside your TouchDesigner bin folder(usually C:/Program Files/Derivative/TouchDesigner/bin/).
 
  Now copy to the same folder, all the files that are in "C:\Program Files (x86)\ZED SDK\bin\"
- ![example](copy.png)
+ 
+ ![example](copy.PNG)
 
 
  Open TouchDesigner, create a new CplusPlus TOP and as dll give the path 'C:/Program Files/Derivative/TouchDesigner/bin/CustomTOP.dll'
 
  You should be able to perform skeleton traking
- ![example](skeleton.png)
+ 
+ ![example](skeleton.PNG)
 
 
 
