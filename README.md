@@ -4,8 +4,12 @@
 
  ## Installation
 
- ### Preparation
+ ### Preparation for development on Windows
  
+ Install [Visual Studio Code community edition](https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=Community&rel=16)
+ 
+ Install [CMake](https://cmake.org/runningcmake/)
+
  Install the Zed SDK, I have tested it with 3.3.5. https://www.stereolabs.com/developers/release/
 
  Clone this repository and follow these [instructions](https://www.stereolabs.com/docs/app-development/cpp/windows/#building-on-windows) to build the examples.
@@ -28,6 +32,16 @@ Now in the build folder, you should have all the Zed Official examples ready to 
  You should be able to perform skeleton traking
  
  ![example](skeleton.PNG)
+ 
+ 
+ ### How to edit the custom TOP operator
+ 
+Open Visual Studio. Then -> File -> Open -> Cmake and open the file "ZedTop/CMakeList.txt". Make your edits. Click on "Build All". If it builds without any error, copy the file 'zedTop/cpp/out/CustomTOP.dll' inside your TouchDesigner bin folder(usually C:/Program Files/Derivative/TouchDesigner/bin/).
+
+
+ 
+ ### Troubleshooting
+ Sometimes, the camera does not turn on, you can see that the blue light on the front of the camera it is not on. In that case, close touchdesigner. Open the Zed Camera Viewer utility and wait until the blue light is on. Open Touch Deisgner, add a CPlusPlus top, as plugin path select  C:/Program Files/Derivative/TouchDesigner/bin/CustomTOP.dll
 
 
 
