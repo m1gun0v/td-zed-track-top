@@ -41,7 +41,7 @@ Open Visual Studio. Then -> File -> Open -> Cmake and open the file "ZedTop/CMak
 
  
  ### Troubleshooting
- Sometimes, the camera does not turn on, you can see that the blue light on the front of the camera it is not on. In that case, close touchdesigner. Open the Zed Camera Viewer utility and wait until the blue light is on. Open Touch Deisgner and load a file where the CustomTOP is used
+ Sometimes, the camera does not turn on, you can see that the blue light on the front of the camera it is not on. In that case, close touchdesigner. Open the Zed Camera Viewer utility and wait until the blue light is on. Open Touch Deisgner, add a CPlusPlus top, as plugin path select  C:/Program Files/Derivative/TouchDesigner/bin/CustomTOP.dll
 
 
 
