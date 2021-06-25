@@ -425,7 +425,7 @@ void Simple3DObject::addLine(sl::float3 p1, sl::float3 p2, sl::float3 clr) {
 }
 
 void Simple3DObject::addCylinder(sl::float3 startPosition, sl::float3 endPosition, sl::float4 clr) {
-	const float m_radius = 0.010f;
+	const float m_radius = 0.030f;
 
 	sl::float3 dir = endPosition - startPosition;
 	float m_height = dir.norm();
@@ -487,7 +487,7 @@ void Simple3DObject::addCylinder(sl::float3 startPosition, sl::float3 endPositio
 }
 
 void Simple3DObject::addSphere(sl::float3 position, sl::float4 clr) {
-	const float m_radius = 0.02f;
+	const float m_radius = 0.030f;
 	const int m_stackCount = 16;
 	const int m_sectorCount = 16;
 
