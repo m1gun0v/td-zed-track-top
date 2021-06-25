@@ -39,6 +39,11 @@ Now in the build folder, you should have all the Zed Official examples ready to 
 Open Visual Studio. Then -> File -> Open -> Cmake and open the file "ZedTop/CMakeList.txt". Make your edits. Click on "Build All". If it builds without any error, copy the file 'zedTop/cpp/out/CustomTOP.dll' inside your TouchDesigner bin folder(usually C:/Program Files/Derivative/TouchDesigner/bin/).
 
 
+ 
+ ### Troubleshooting
+ Sometimes, the camera does not turn on, you can see that the blue light on the front of the camera it is not on. In that case, close touchdesigner. Open the Zed Camera Viewer utility and wait until the blue light is on. Open Touch Deisgner and load a file where the CustomTOP is used
+
+
 
 
 
