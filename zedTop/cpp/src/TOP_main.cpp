@@ -179,10 +179,10 @@ private:
 
 	bool initZed()
 	{
-		init_parameters.camera_resolution = RESOLUTION::HD2K;
+		//init_parameters.camera_resolution = RESOLUTION::HD2K;
 		//init_parameters.camera_resolution = RESOLUTION::HD1080;
 		//init_parameters.camera_resolution = RESOLUTION::HD720;
-		//init_parameters.camera_resolution = RESOLUTION::VGA;
+		init_parameters.camera_resolution = RESOLUTION::VGA;
 
 		init_parameters.depth_mode = DEPTH_MODE::ULTRA;
 		init_parameters.coordinate_system = COORDINATE_SYSTEM::RIGHT_HANDED_Y_UP;
