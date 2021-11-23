@@ -20,6 +20,8 @@ Now in the build folder, you should have all the Zed Official examples ready to 
 
  If the previous step works, open Visual Studio(2017) -> File -> Open -> Cmake and open the file "ZedTop/cpp/CMakeList.txt". Press Cmake -> Build all.
  In Visual Studio 2019, the Cmake menu is not there anymore. Click on the menu Build -> Build all. If you receive a message like "Build all succeed" everything went well.
+ 
+ If there is no "release 64" mode, click on "manage configuration" -> green button + -> Release 64, right click on the header ot the tab, right click save.
 
  Copy the file 'zedTop/cpp/out/CustomTOP.dll' inside your TouchDesigner bin folder(usually C:/Program Files/Derivative/TouchDesigner/bin/).
 
