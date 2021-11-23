@@ -14,7 +14,7 @@
 
  Clone this repository and follow these [instructions](https://www.stereolabs.com/docs/app-development/cpp/windows/#building-on-windows) to build the examples.
 
-Now in the build folder, you should have all the Zed Official examples ready to run. Open Visual Studio, open the ALL_BUILD solution. Among all the examples, select "body tracking" and set it as starting project.Right click on "build". If there are no error, set the project in Release mode (menu on the top). Run the solution pressing on the play button, if a window opens, and the application is able to detect the a skeleton, your ZED SDK is installed correctly and you can proceed further.
+Now in the build folder, you should have all the Zed Official examples ready to run. Open Visual Studio, open the ALL_BUILD solution. Among all the examples, select "body tracking" and set it as starting project (right click and then "set as starting project"). Right click on "build". If there are no error, set the project in Release mode (menu on the top). Run the solution pressing on the play button, if a window opens, and the application is able to detect the a skeleton, your ZED SDK is installed correctly and you can proceed further.
 
 ### Custom TOP Operator 
 
