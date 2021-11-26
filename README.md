@@ -10,7 +10,7 @@
  
  Install [CMake](https://cmake.org/runningcmake/)
 
- Install the Zed SDK, I have tested it with 3.5.0. https://www.stereolabs.com/developers/release/ and CUDA 11.0.
+ Install the Zed SDK, I have tested it with [3.6.1](https://www.stereolabs.com/developers/release/) and CUDA 11.1.
 
  Clone this repository and follow these [instructions](https://www.stereolabs.com/docs/app-development/cpp/windows/#building-on-windows) to build the examples.
 
