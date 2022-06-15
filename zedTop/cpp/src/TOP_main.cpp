@@ -71,8 +71,8 @@ public:
 	{
 		OP_NumericParameter	np;
 
-		np.name = "Drawzedtexture1";
-		np.label = "Drawzedtexture 1";
+		np.name = "Drawtexture";
+		np.label = "Draw texture";
 		OP_ParAppendResult res = manager->appendToggle(np);
 		assert(res == OP_ParAppendResult::Success);
 	}
@@ -96,7 +96,7 @@ public:
 		// These functions must be called before
 		// beginGLCommands()/endGLCommands() block
 		double speed = 1.00;
-		int32_t drawZedtex = inputs->getParInt("Drawzedtexture1");
+		bool drawZedtex = inputs->getParInt("Drawtexture");
 		context->beginGLCommands();
 
 		if (viewer.isAvailable() && (zed.grab() == ERROR_CODE::SUCCESS))
